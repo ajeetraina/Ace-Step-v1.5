@@ -1,0 +1,186 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ace-step"
+version = "1.5.0"
+description = "ACE-Step v1.5: Music Generation Foundation Model optimized for Apple Silicon ARM64"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [
+    {name = "ACE Studio & StepFun", email = "info@acestep.ai"},
+    {name = "Ajeet Singh Raina", email = "ajeetraina@gmail.com"}
+]
+keywords = ["music-generation", "ai", "ml", "audio", "apple-silicon", "arm64"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux", 
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# ARM64/Apple Silicon optimized dependencies
+dependencies = [
+    # Core ML Framework with Apple Silicon MPS support
+    "torch>=2.1.0",
+    "torchaudio>=2.1.0", 
+    "torchvision>=0.16.0",
+    # Apple Silicon optimized scientific computing
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    # Audio processing libraries with ARM64 support
+    "librosa>=0.10.0",
+    "soundfile>=0.12.0",
+    "resampy>=0.4.0",
+    "audioread>=3.0.0",
+    # Gradio web interface
+    "gradio>=4.0.0",
+    "gradio-client>=0.7.0",
+    # HuggingFace ecosystem with ARM64 support
+    "transformers>=4.35.0",
+    "diffusers>=0.21.0",
+    "accelerate>=0.24.0",
+    "datasets>=2.14.0",
+    "tokenizers>=0.14.0",
+    # Environment and configuration
+    "python-dotenv>=1.0.0",
+    "omegaconf>=2.3.0",
+    "hydra-core>=1.3.0",
+    # Image and data processing
+    "pillow>=10.0.0",
+    "opencv-python-headless>=4.8.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    # Utilities
+    "tqdm>=4.65.0",
+    "rich>=13.0.0",
+    "einops>=0.7.0",
+    "ffmpeg-python>=0.2.0",
+]
+
+[project.optional-dependencies]
+# Development dependencies
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "jupyter>=1.0.0",
+    "ipywidgets>=8.0.0",
+]
+
+# Full ML stack with monitoring (optional)
+full = [
+    "wandb>=0.15.0",
+    "tensorboard>=2.14.0",
+    "vllm>=0.2.0",
+]
+
+# ARM64 specific optimizations
+arm64 = [
+    # ARM64 optimized packages
+    "triton>=2.1.0; platform_machine != 'arm64'",  # Skip on ARM64 where not supported
+]
+
+[project.urls]
+Homepage = "https://ace-step.github.io/ace-step-v1.5.github.io/"
+Repository = "https://github.com/ajeetraina/Ace-Step-v1.5"
+"Bug Tracker" = "https://github.com/ajeetraina/Ace-Step-v1.5/issues"
+Documentation = "https://ace-step.github.io/ace-step-v1.5.github.io/"
+"Hugging Face" = "https://huggingface.co/collections/ACE-Step/ace-step-15"
+Discord = "https://discord.gg/PeWDxrkdj7"
+
+[project.scripts]
+acestep = "acestep.acestep_v15_pipeline:main"
+acestep-api = "acestep.api_server:main"
+
+[tool.uv]
+# UV-specific configurations for Apple Silicon optimization
+dev-dependencies = [
+    "pytest>=7.4.0",
+    "black>=23.0.0", 
+    "ruff>=0.1.0",
+    "jupyter>=1.0.0",
+    "ipywidgets>=8.0.0",
+]
+
+# ARM64 specific package resolution
+[tool.uv.sources]
+torch = { index = "https://download.pytorch.org/whl/cpu" }
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | acestep/third_parts
+)/
+'''
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"acestep/third_parts/**" = ["E", "W", "F", "I", "B", "C4", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "apple_silicon: marks tests specific to Apple Silicon hardware",
+]
+
+[tool.coverage.run]
+source = ["acestep"]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
