@@ -1,0 +1,131 @@
+# ACE-Step v1.5 - Apple Silicon ARM64 Docker Compose Configuration
+version: '3.8'
+
+services:
+  ace-step:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+        - linux/amd64
+      args:
+        BUILDPLATFORM: linux/arm64
+        TARGETPLATFORM: linux/arm64
+    image: ace-step:arm64-latest
+    container_name: ace-step-arm64
+    ports:
+      - "7860:7860"
+    volumes:
+      # Persistent storage for models and data
+      - ace_step_data:/data
+      - ace_step_models:/home/user/.cache
+      # Optional: Mount local development directory
+      # - .:/home/user/app:ro
+    environment:
+      # Apple Silicon / ARM64 optimizations
+      - PYTORCH_ENABLE_MPS_FALLBACK=1
+      - PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+      - OMP_NUM_THREADS=4
+      - MKL_NUM_THREADS=4
+      - OPENBLAS_NUM_THREADS=4
+      - VECLIB_MAXIMUM_THREADS=4
+      - TOKENIZERS_PARALLELISM=false
+      # Gradio configuration
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+      # ACE-Step configuration
+      - ACESTEP_DEVICE=auto
+      - ACESTEP_OFFLOAD_TO_CPU=true
+      - ACESTEP_BACKEND=pt
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Resource limits optimized for Apple Silicon
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+    # Security optimizations
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+
+  # Optional: Development server with hot reload
+  ace-step-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+      platforms:
+        - linux/arm64
+    image: ace-step:arm64-dev
+    container_name: ace-step-arm64-dev
+    ports:
+      - "7861:7860"
+    volumes:
+      - .:/home/user/app
+      - ace_step_dev_data:/data
+      - ace_step_dev_models:/home/user/.cache
+    environment:
+      - PYTORCH_ENABLE_MPS_FALLBACK=1
+      - PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+      - OMP_NUM_THREADS=4
+      - MKL_NUM_THREADS=4
+      - OPENBLAS_NUM_THREADS=4
+      - VECLIB_MAXIMUM_THREADS=4
+      - TOKENIZERS_PARALLELISM=false
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+      - ACESTEP_DEVICE=auto
+      - ACESTEP_OFFLOAD_TO_CPU=true
+      - ACESTEP_BACKEND=pt
+      # Development specific
+      - PYTHONPATH=/home/user/app
+      - DEVELOPMENT=true
+    command: >
+      sh -c "
+        pip install --no-cache-dir --user -e . &&
+        python -m acestep.acestep_v15_pipeline --server-name 0.0.0.0 --port 7860 --device auto
+      "
+    profiles:
+      - dev
+    restart: no
+    depends_on:
+      - ace-step
+
+volumes:
+  # Production volumes
+  ace_step_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data
+  ace_step_models:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./models
+
+  # Development volumes  
+  ace_step_dev_data:
+    driver: local
+  ace_step_dev_models:
+    driver: local
+
+networks:
+  default:
+    name: ace_step_network
+    driver: bridge
