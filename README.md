@@ -27,6 +27,8 @@ short_description: Music Generation Foundation Model v1.5
     <img src="./assets/orgnization_logos.png" width="100%" alt="StepFun Logo">
 </p>
 
+The original source code of this repo is available [here](https://huggingface.co/spaces/ACE-Step/Ace-Step-v1.5). This is just used for a demo to showcase x86 to Arm migration.
+
 ## Table of Contents
 
 - [✨ Features](#-features)
